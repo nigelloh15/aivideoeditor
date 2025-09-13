@@ -1,5 +1,5 @@
 import { useState } from 'react'
-import { Upload, Play, Download, ClosedCaption} from 'lucide-react'
+import { Upload, Play, Download, ClosedCaption } from 'lucide-react'
 import './App.css'
 
 function App() {
@@ -7,8 +7,8 @@ function App() {
   return (
     <div className="flex flex-col h-screen bg-gray-900 text-white">
       <header className="h-20 bg-gray-800 flex items-center justify-between px-6">
-      {/* Left group */}
-      <div className="flex space-x-24">
+      {/* Upload button and caption button*/}
+      <div className="flex space-x-20">
         <button className="flex flex-col items-center hover:text-blue-400">
           <Upload className="h-7 w-7" />
           <span className="text-xs">Import</span>
@@ -19,11 +19,20 @@ function App() {
         </button>
       </div>
 
-      {/* Right group */}
-      <div className="flex space-x-24">
+      {/* Editable title in center */}
+      <div
+        contentEditable
+        suppressContentEditableWarning={true}
+        className="text-white text-lg font-semibold text-center outline-none bg-gray-700 px-3 py-1 rounded inline-block"
+      >
+        Project Title
+      </div>
+
+      {/* Preview and export button */}
+      <div className="flex space-x-20">
         <button className="flex flex-col items-center hover:text-blue-400">
           <Play className="h-7 w-7" />
-          <span className="text-xs">Play</span>
+          <span className="text-xs">Preview</span>
         </button>
         <button className="flex flex-col items-center hover:text-blue-400">
           <Download className="h-7 w-7" />

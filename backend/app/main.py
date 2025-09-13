@@ -3,9 +3,11 @@ from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import uuid
+from fastapi import APIRouter
+from fastapi.responses import JSONResponse
 
 from .models import UploadVideoResponse, EditRequest, AnalyzeRequest
-from .video_utils import cut_video, splice_videos, add_text_overlay
+from .video_utils import cut_video, splice_videos, add_text_overlay, detect_scenes
 from .ai_utils import save_instructions, load_instructions
 from .cohere import CohereLLM
 from .gemini import GeminiLLM
@@ -37,11 +39,24 @@ app.mount("/videos/processed", StaticFiles(directory=PROCESSED_DIR), name="proce
 # Choose your LLM here
 # -------------------
 # llm = CohereLLM()
-llm = GeminiLLM(api_key="AIzaSyCFlkoltYGCpeBKkSEdQ8q-e58LTsGuuw8")
+llm = CohereLLM()
 
 # -------------------
 # API Endpoints
 # -------------------
+
+
+
+@app.get("/list-videos")
+def list_videos():
+    video_files = list(VIDEO_DIR.glob("*_*"))
+    videos = []
+    for file in video_files:
+        video_id, filename = file.name.split("_", 1)
+        videos.append({"video_id": video_id, "filename": filename})
+    return JSONResponse(videos)
+
+
 
 @app.post("/upload-video", response_model=UploadVideoResponse)
 async def upload_video(file: UploadFile = File(...)):
@@ -60,14 +75,59 @@ async def upload_video(file: UploadFile = File(...)):
 
 @app.post("/analyze-video/{video_id}")
 def analyze_video(video_id: str, request: AnalyzeRequest):
+    """
+    Analyze a video using Cohere AI.
+    Detect key frames and generate editing instructions for every 60th frame.
+    Returns the instructions as JSON.
+    """
     video_files = list(VIDEO_DIR.glob(f"{video_id}_*"))
     if not video_files:
+        print(f"No video found for video_id={video_id}")
         return {"video_id": video_id, "instructions": []}
 
     video_path = str(video_files[0])
-    instructions = llm.generate_video_instructions(video_path, request.prompt)
+    print(f"Analyzing video: {video_path} with prompt: {request.prompt}")
+
+    # 1. Detect key frames / scenes
+    from .video_utils import detect_scenes
+    frames_dir = Path(f"./videos/temp_frames/{video_id}")
+    frames_dir.mkdir(parents=True, exist_ok=True)
+
+    frames = detect_scenes(video_path, str(frames_dir), threshold=0.3)
+    print(f"Detected {len(frames)} key frames for video {video_id}")
+
+    instructions = []
+
+    # 2. Generate AI instructions for every 60th frame
+    for i, (frame_path, timestamp) in enumerate(frames):
+        if i % 60 != 0:
+            continue  # skip frames that are not every 60th
+
+        try:
+            # Call CohereLLM correctly
+            desc_list = llm.generate_video_instructions(str(frame_path))
+            summary = desc_list[0]["summary"] if desc_list else "No description"
+        except Exception as e:
+            print(f"Error generating description for frame {i}: {e}")
+            summary = "Error generating description"
+
+        print(f"[Frame {i}] Timestamp: {timestamp:.2f}s -> AI sees: {summary}")
+
+        instructions.append({
+            "start": timestamp,
+            "end": min(timestamp + 5, 9999),  # default 5s clip
+            "summary": summary,
+            "caption": summary
+        })
+
+    # 3. Save instructions for later editing
     save_instructions(video_id, instructions)
+    print(f"Saved {len(instructions)} instructions for video {video_id}")
+
     return {"video_id": video_id, "instructions": instructions}
+
+
+
 
 @app.post("/edit-video")
 def edit_video(request: EditRequest):

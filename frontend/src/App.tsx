@@ -6,6 +6,7 @@ function App() {
   const [files, setFiles] = useState<File[]>([]);
   const [isPlaying, setIsPlaying] = useState(false); // Add this line
   const fileInputRef = useRef<HTMLInputElement | null>(null);
+  const videoContainerRef = useRef<HTMLDivElement | null>(null);
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -14,6 +15,18 @@ function App() {
   const handleFilesChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files) {
       setFiles(Array.from(e.target.files));
+    }
+  };
+
+  const handlePreviewClick = () => {
+    if (videoContainerRef.current) {
+      if (videoContainerRef.current.requestFullscreen) {
+        videoContainerRef.current.requestFullscreen();
+      } else if ((videoContainerRef.current as any).webkitRequestFullscreen) {
+        (videoContainerRef.current as any).webkitRequestFullscreen(); // Safari
+      } else if ((videoContainerRef.current as any).msRequestFullscreen) {
+        (videoContainerRef.current as any).msRequestFullscreen(); // IE/Edge
+      }
     }
   };
 
@@ -42,17 +55,20 @@ function App() {
           suppressContentEditableWarning={true}
           onKeyDown={(e) => {
             if (e.key === "Enter") {
-            e.preventDefault(); // prevent new line
-    }
-  }}
-  className="text-white text-lg font-semibold text-center outline-none bg-gray-700 px-3 py-1 rounded inline-block whitespace-nowrap overflow-hidden"
->
-  Project Title
-</div>
+              e.preventDefault(); // prevent new line
+            }
+          }}
+          className="text-white text-lg font-semibold text-center outline-none bg-gray-700 px-3 py-1 rounded inline-block whitespace-nowrap overflow-hidden"
+        >
+          Project Title
+        </div>
 
         {/* Preview and export buttons */}
         <div className="flex space-x-6">
-          <button className="flex flex-col items-center hover:text-blue-400">
+          <button
+            className="flex flex-col items-center hover:text-blue-400"
+            onClick={handlePreviewClick}
+          >
             <Play className="h-7 w-7" />
             <span className="text-xs">Preview</span>
           </button>
@@ -74,7 +90,7 @@ function App() {
 
       {/* Main Editor Area */}
       <main className="flex-1 flex flex-row bg-gray-700">
-        {/* Chat Prompting Area (10-15%) */}
+        {/* Chat Prompting Area */}
         <section className="w-1/6 min-w-[180px] max-w-xs bg-gray-700 flex flex-col p-2 border-r border-gray-700 my-5 mx-2">
           <div className="flex flex-col flex-1 rounded-lg justify-center h-1/2">
             <form className="flex flex-col h-full">
@@ -92,8 +108,8 @@ function App() {
             </form>
           </div>
         </section>
-      
-        {/* Video Player Display (rest of the space) */}
+
+        {/* Video Player Display */}
         <section className="flex-1 bg-gray-700 flex flex-col items-center justify-center">
           <div className="flex flex-row w-5/6 items-center justify-center">
             {/* Vertical Control Bar */}
@@ -117,14 +133,14 @@ function App() {
               </button>
             </div>
             {/* Video Player */}
-            <div className="aspect-video bg-black rounded-xl shadow-lg flex-1 flex items-center justify-center min-w-[320px] max-w-[1920px]">
+            <div className="aspect-video bg-black rounded-xl shadow-lg flex-1 flex items-center justify-center min-w-[320px] max-w-[1920px]" ref={videoContainerRef}>
               <span className="text-gray-500">[Video Player Here]</span>
             </div>
           </div>
         </section>
       </main>
     </div>
-  )
+  );
 }
 
-export default App
+export default App;

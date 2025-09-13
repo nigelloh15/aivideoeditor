@@ -6,27 +6,27 @@ function App() {
   const [count, setCount] = useState(0)
   return (
     <div className="flex flex-col h-screen bg-gray-900 text-white">
-      <header className="h-16 bg-gray-800 flex items-center justify-between px-6">
+      <header className="h-20 bg-gray-800 flex items-center justify-between px-6">
       {/* Left group */}
-      <div className="flex space-x-8">
+      <div className="flex space-x-24">
         <button className="flex flex-col items-center hover:text-blue-400">
-          <Upload className="h-5 w-5" />
+          <Upload className="h-7 w-7" />
           <span className="text-xs">Import</span>
         </button>
         <button className="flex flex-col items-center hover:text-blue-400">
-          <ClosedCaption className="h-5 w-5" />
+          <ClosedCaption className="h-7 w-7" />
           <span className="text-xs">Captions</span>
         </button>
       </div>
 
       {/* Right group */}
-      <div className="flex space-x-8">
+      <div className="flex space-x-24">
         <button className="flex flex-col items-center hover:text-blue-400">
-          <Play className="h-5 w-5" />
+          <Play className="h-7 w-7" />
           <span className="text-xs">Play</span>
         </button>
         <button className="flex flex-col items-center hover:text-blue-400">
-          <Download className="h-5 w-5" />
+          <Download className="h-7 w-7" />
           <span className="text-xs">Export</span>
         </button>
       </div>

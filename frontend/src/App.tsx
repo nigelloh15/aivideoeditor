@@ -8,7 +8,7 @@ function App() {
     <div className="flex flex-col h-screen bg-gray-900 text-white">
       <header className="h-20 bg-gray-800 flex items-center justify-between px-6">
       {/* Upload button and caption button*/}
-      <div className="flex space-x-24">
+      <div className="flex space-x-20">
         <button className="flex flex-col items-center hover:text-blue-400">
           <Upload className="h-7 w-7" />
           <span className="text-xs">Import</span>
@@ -29,7 +29,7 @@ function App() {
       </div>
 
       {/* Preview and export button */}
-      <div className="flex space-x-24">
+      <div className="flex space-x-20">
         <button className="flex flex-col items-center hover:text-blue-400">
           <Play className="h-7 w-7" />
           <span className="text-xs">Preview</span>

@@ -1,13 +1,54 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Vite + React + TS</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Simple Video Editor UI</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="h-screen bg-gray-900 text-gray-200">
+  <!-- Container -->
+  <div class="flex h-full">
+    <!-- Sidebar -->
+    <aside class="w-56 bg-gray-800 p-4 space-y-2">
+      <button class="w-full py-2 px-3 bg-gray-700 rounded hover:bg-gray-600 text-left">Media</button>
+      <button class="w-full py-2 px-3 bg-gray-700 rounded hover:bg-gray-600 text-left">Video</button>
+      <button class="w-full py-2 px-3 bg-gray-700 rounded hover:bg-gray-600 text-left">Audio</button>
+      <button class="w-full py-2 px-3 bg-gray-700 rounded hover:bg-gray-600 text-left">Text</button>
+      <button class="w-full py-2 px-3 bg-gray-700 rounded hover:bg-gray-600 text-left">Effects</button>
+      <button class="w-full py-2 px-3 bg-gray-700 rounded hover:bg-gray-600 text-left">Settings</button>
+    </aside>
+
+    <!-- Main editor -->
+    <div class="flex-1 flex flex-col">
+      <!-- Top bar -->
+      <header class="flex items-center justify-between bg-gray-800 p-3">
+        <h1 class="text-sm font-semibold">Video Project</h1>
+        <button class="bg-blue-600 px-3 py-1 rounded text-sm hover:bg-blue-500">Export</button>
+      </header>
+
+      <!-- Preview area -->
+      <div class="flex-1 flex bg-gray-900">
+        <!-- Media list -->
+        <div class="w-1/3 border-r border-gray-700 p-3 space-y-2 overflow-y-auto">
+          <div class="bg-gray-700 h-24 rounded flex items-center justify-center">Clip 1</div>
+          <div class="bg-gray-700 h-24 rounded flex items-center justify-center">Clip 2</div>
+          <div class="bg-gray-700 h-24 rounded flex items-center justify-center">Clip 3</div>
+        </div>
+
+        <!-- Video preview -->
+        <div class="flex-1 flex items-center justify-center p-3">
+          <div class="bg-black w-full h-full rounded flex items-center justify-center">
+            <span class="text-gray-500">Video Preview</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Timeline -->
+      <div class="h-40 bg-gray-800 border-t border-gray-700 p-3">
+        <div class="bg-gray-700 h-20 rounded flex items-center justify-center">Timeline (Tracks go here)</div>
+      </div>
+    </div>
+  </div>
+</body>
 </html>

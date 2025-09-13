@@ -39,10 +39,15 @@ function App() {
         <div
           contentEditable
           suppressContentEditableWarning={true}
-          className="text-white text-lg font-semibold text-center outline-none bg-gray-700 px-3 py-1 rounded inline-block"
-        >
-          Project Title
-        </div>
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+            e.preventDefault(); // prevent new line
+    }
+  }}
+  className="text-white text-lg font-semibold text-center outline-none bg-gray-700 px-3 py-1 rounded inline-block whitespace-nowrap overflow-hidden"
+>
+  Project Title
+</div>
 
         {/* Preview and export buttons */}
         <div className="flex space-x-10">

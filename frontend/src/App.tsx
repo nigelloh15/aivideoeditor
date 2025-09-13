@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
-import { Upload, Play, Download, ClosedCaption } from 'lucide-react';
+import { Upload, Play, Download, ClosedCaption, Pause, Rewind, FastForward } from 'lucide-react';
 import './App.css';
 
 function App() {
   const [files, setFiles] = useState<File[]>([]);
+  const [isPlaying, setIsPlaying] = useState(false); // Add this line
   const fileInputRef = useRef<HTMLInputElement | null>(null);
 
   const handleUploadClick = () => {
@@ -21,7 +22,7 @@ function App() {
       {/* Header */}
       <header className="h-20 bg-gray-800 flex items-center justify-between px-6">
         {/* Upload button and captions */}
-        <div className="flex space-x-10">
+        <div className="flex space-x-5">
           <button
             className="flex flex-col items-center hover:text-blue-400"
             onClick={handleUploadClick}
@@ -50,7 +51,7 @@ function App() {
 </div>
 
         {/* Preview and export buttons */}
-        <div className="flex space-x-10">
+        <div className="flex space-x-6">
           <button className="flex flex-col items-center hover:text-blue-400">
             <Play className="h-7 w-7" />
             <span className="text-xs">Preview</span>
@@ -94,9 +95,31 @@ function App() {
       
         {/* Video Player Display (rest of the space) */}
         <section className="flex-1 bg-gray-700 flex flex-col items-center justify-center">
-          {/* Placeholder for video player */}
-          <div className="w-5/6 aspect-video bg-black rounded shadow-lg flex items-center justify-center">
-            <span className="text-gray-500">[Video Player Here]</span>
+          <div className="flex flex-row w-5/6 items-center justify-center">
+            {/* Vertical Control Bar */}
+            <div className="flex flex-col items-center justify-center bg-gray-800 rounded-lg py-6 px-3 mr-2 space-y-4 shadow">
+
+              <button className="hover:text-blue-400">
+                <Rewind className="h-8 w-8" strokeWidth={2} />
+              </button>
+              <button
+                className="hover:text-blue-400"
+                onClick={() => setIsPlaying((prev) => !prev)}
+              >
+                {isPlaying ? (
+                  <Pause className="h-8 w-8" strokeWidth={2} />
+                ) : (
+                  <Play className="h-8 w-8" strokeWidth={2} />
+                )}
+              </button>
+              <button className="hover:text-blue-400">
+                <FastForward className="h-8 w-8" strokeWidth={2} />
+              </button>
+            </div>
+            {/* Video Player */}
+            <div className="aspect-video bg-black rounded-r-lg shadow-lg flex-1 flex items-center justify-center min-w-[320px] max-w-[1920px]">
+              <span className="text-gray-500">[Video Player Here]</span>
+            </div>
           </div>
         </section>
       </main>

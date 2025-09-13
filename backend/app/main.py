@@ -1,13 +1,27 @@
 from fastapi import FastAPI, UploadFile, File
+from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
 from pathlib import Path
 import uuid
-from typing import List
-from models import UploadVideoResponse, VideoMarker, VideoSummaryResponse, EditRequest
-from video_utils import cut_video, splice_videos, add_text_overlay
-from ai_utils import analyze_video, select_clips_based_on_prompt
 
+from .models import UploadVideoResponse, EditRequest, AnalyzeRequest
+from .video_utils import cut_video, splice_videos, add_text_overlay
+from .ai_utils import save_instructions, load_instructions
+from .cohere import CohereLLM
+from .gemini import GeminiLLM
+
+# Initialize FastAPI
 app = FastAPI()
 
+# Enable CORS for local testing
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["*"],  # Or ["http://localhost:5500"] if serving HTML locally
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
+
+# Video storage directories
 VIDEO_DIR = Path("./videos/raw")
 PROCESSED_DIR = Path("./videos/processed")
 METADATA_DIR = Path("./videos/metadata")
@@ -16,84 +30,80 @@ VIDEO_DIR.mkdir(parents=True, exist_ok=True)
 PROCESSED_DIR.mkdir(parents=True, exist_ok=True)
 METADATA_DIR.mkdir(parents=True, exist_ok=True)
 
+# Serve processed videos for frontend preview/download
+app.mount("/videos/processed", StaticFiles(directory=PROCESSED_DIR), name="processed")
+
+# -------------------
+# Choose your LLM here
+# -------------------
+# llm = CohereLLM()
+llm = GeminiLLM(api_key="AIzaSyCFlkoltYGCpeBKkSEdQ8q-e58LTsGuuw8")
+
+# -------------------
+# API Endpoints
+# -------------------
+
 @app.post("/upload-video", response_model=UploadVideoResponse)
 async def upload_video(file: UploadFile = File(...)):
+    """
+    Upload a video file.
+    Returns a unique video_id for later processing.
+    """
+    print("Received file:", file.filename)
     video_id = str(uuid.uuid4())
-    filename = file.filename or "unknown.mp4"  # fallback if None
+    filename = file.filename or "unknown.mp4"
     file_path = VIDEO_DIR / f"{video_id}_{filename}"
     with open(file_path, "wb") as f:
         f.write(await file.read())
-
-
-    print("clip uploaded")
     return UploadVideoResponse(video_id=video_id, filename=filename)
 
-@app.get("/analyze-video/{video_id}", response_model=VideoSummaryResponse)
-def analyze(video_id: str):
-    # Find video file
+
+@app.post("/analyze-video/{video_id}")
+def analyze_video(video_id: str, request: AnalyzeRequest):
     video_files = list(VIDEO_DIR.glob(f"{video_id}_*"))
     if not video_files:
-        return {"video_id": video_id, "markers": []}
-    
-    video_path = video_files[0]
-    markers = analyze_video(str(video_path))
-    
-    # Optionally save markers to JSON for later
-    import json
-    with open(METADATA_DIR / f"{video_id}.json", "w") as f:
-        json.dump([marker.dict() for marker in markers], f)
-    
-    print("clip analyzed")
-    return VideoSummaryResponse(video_id=video_id, markers=markers)
+        return {"video_id": video_id, "instructions": []}
 
-
+    video_path = str(video_files[0])
+    instructions = llm.generate_video_instructions(video_path, request.prompt)
+    save_instructions(video_id, instructions)
+    return {"video_id": video_id, "instructions": instructions}
 
 @app.post("/edit-video")
 def edit_video(request: EditRequest):
-    # Load markers for all videos
-    video_markers = {}
-    import json
+    """
+    Cut, splice, and optionally add captions to the videos based on LLM instructions.
+    Returns the path to the final processed video.
+    """
+    all_clips = []
+
     for vid in request.video_ids:
-        metadata_file = METADATA_DIR / f"{vid}.json"
-        if metadata_file.exists():
-            with open(metadata_file, "r") as f:
-                markers_json = json.load(f)
-                video_markers[vid] = [VideoMarker(**m) for m in markers_json]
-        else:
-            video_markers[vid] = []
-    
-    # AI selects clips based on prompt
-    selected_clips = select_clips_based_on_prompt(video_markers, request.prompt)
-    
-    # Cut selected clips into separate files
-    cut_clip_paths = []
-
-    for idx, clip in enumerate(selected_clips):
-
-        vid = clip["video_id"]
-        startpoint = clip["start"]
-        endpoint = clip["end"]
-        
         video_files = list(VIDEO_DIR.glob(f"{vid}_*"))
         if not video_files:
-            continue  # skip if missing
-        video_path = video_files[0]
+            continue
+        video_path = str(video_files[0])
+        instructions = load_instructions(vid)
 
-        cut_path = PROCESSED_DIR / f"clip_{idx}.mp4"
-        cut_video(str(video_path), str(cut_path), start=startpoint, end=endpoint)  # Placeholder 5-second cuts
-        cut_clip_paths.append(str(cut_path))
-    
-    # Splice clips together
-    output_video_path = PROCESSED_DIR / f"{uuid.uuid4()}.mp4"
-    splice_videos(cut_clip_paths, str(output_video_path))
+        for idx, instr in enumerate(instructions):
+            clip_path = PROCESSED_DIR / f"{vid}_clip_{idx}.mp4"
+            cut_video(video_path, str(clip_path), start=instr["start"], end=instr["end"])
 
+            if request.add_captions and instr.get("caption"):
+                add_text_overlay(
+                    str(clip_path),
+                    str(clip_path),
+                    instr["caption"],
+                    start=0,
+                    end=instr["end"] - instr["start"]
+                )
 
+            all_clips.append(str(clip_path))
 
-    print("clip edit")
-    
-    # Add captions if requested
-    if request.add_captions:
-        caption_path = PROCESSED_DIR / f"{uuid.uuid4()}_captioned.mp4"
-        add_text_overlay(str(output_video_path), str(caption_path), "Sample Caption", 0, 5)
-        output_video_path = caption_path
-    return {"output_video": str(output_video_path)}
+    if not all_clips:
+        return {"error": "No clips found to splice."}
+
+    # Splice all clips together
+    output_path = PROCESSED_DIR / f"{uuid.uuid4()}.mp4"
+    splice_videos(all_clips, str(output_path))
+
+    return {"output_video": f"videos/processed/{output_path.name}"}

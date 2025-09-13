@@ -1,6 +1,9 @@
 import { useRef, useState } from 'react';
 import { Upload, Play, Download, ClosedCaption } from 'lucide-react';
 import './App.css';
+import { useRef, useState } from 'react';
+import { Upload, Play, Download, ClosedCaption } from 'lucide-react';
+import './App.css';
 
 function App() {
   const [files, setFiles] = useState<File[]>([]);
@@ -19,7 +22,22 @@ function App() {
   return (
     <div className="flex flex-col h-screen bg-gray-900 text-white">
       {/* Header */}
+      {/* Header */}
       <header className="h-20 bg-gray-800 flex items-center justify-between px-6">
+        {/* Upload button and captions */}
+        <div className="flex space-x-10">
+          <button
+            className="flex flex-col items-center hover:text-blue-400"
+            onClick={handleUploadClick}
+          >
+            <Upload className="h-7 w-7" />
+            <span className="text-xs">Import</span>
+          </button>
+          <button className="flex flex-col items-center hover:text-blue-400">
+            <ClosedCaption className="h-7 w-7" />
+            <span className="text-xs">Captions</span>
+          </button>
+        </div>
         {/* Upload button and captions */}
         <div className="flex space-x-10">
           <button
@@ -48,6 +66,19 @@ function App() {
 >
   Project Title
 </div>
+        {/* Editable title in center */}
+        <div
+          contentEditable
+          suppressContentEditableWarning={true}
+          onKeyDown={(e) => {
+            if (e.key === "Enter") {
+            e.preventDefault(); // prevent new line
+    }
+  }}
+  className="text-white text-lg font-semibold text-center outline-none bg-gray-700 px-3 py-1 rounded inline-block whitespace-nowrap overflow-hidden"
+>
+  Project Title
+</div>
 
         {/* Preview and export buttons */}
         <div className="flex space-x-10">
@@ -61,7 +92,27 @@ function App() {
           </button>
         </div>
       </header>
+        {/* Preview and export buttons */}
+        <div className="flex space-x-10">
+          <button className="flex flex-col items-center hover:text-blue-400">
+            <Play className="h-7 w-7" />
+            <span className="text-xs">Preview</span>
+          </button>
+          <button className="flex flex-col items-center hover:text-blue-400">
+            <Download className="h-7 w-7" />
+            <span className="text-xs">Export</span>
+          </button>
+        </div>
+      </header>
 
+      {/* Hidden file input */}
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleFilesChange}
+        style={{ display: 'none' }}
+        multiple
+      />
       {/* Hidden file input */}
       <input
         type="file"

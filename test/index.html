@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>AI Video Editor</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 2rem; }
+    button { margin: 0.3rem 0; }
+    video { display: block; margin-top: 1rem; max-width: 600px; }
+    pre { background: #f0f0f0; padding: 1rem; max-height: 300px; overflow-y: auto; }
+    .video-item { margin-bottom: 1rem; }
+  </style>
+</head>
+<body>
+  <h1>AI Video Editor</h1>
+
+  <h2>Available Videos</h2>
+  <div id="videoList">Loading videos...</div>
+
+  <h2>Prompt</h2>
+  <input type="text" id="prompt" placeholder="Enter editing prompt" style="width: 300px;">
+  
+  <h2>Output Video</h2>
+  <video id="outputVideo" controls></video>
+  <a id="downloadLink" href="#" download>Download Video</a>
+
+  <script>
+    const videoListDiv = document.getElementById("videoList");
+    const outputVideo = document.getElementById("outputVideo");
+    const downloadLink = document.getElementById("downloadLink");
+
+    // Fetch all videos in raw folder from backend
+    async function fetchVideos() {
+      try {
+        const res = await fetch("http://localhost:8000/list-videos"); // We'll create this endpoint
+        const videos = await res.json();
+        videoListDiv.innerHTML = "";
+
+        if (!videos.length) {
+          videoListDiv.textContent = "No videos found in raw folder.";
+          return;
+        }
+
+        videos.forEach(video => {
+          const div = document.createElement("div");
+          div.className = "video-item";
+          div.innerHTML = `
+            <strong>${video.filename}</strong> (ID: ${video.video_id})
+            <button onclick="analyzeVideo('${video.video_id}')">Analyze</button>
+          `;
+          videoListDiv.appendChild(div);
+        });
+      } catch (err) {
+        videoListDiv.textContent = "Error fetching videos.";
+        console.error(err);
+      }
+    }
+
+    async function analyzeVideo(videoId) {
+      const prompt = document.getElementById("prompt").value || "Make it watchable";
+      try {
+        const res = await fetch(`http://localhost:8000/analyze-video/${videoId}`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ prompt })
+        });
+        const data = await res.json();
+        alert(`Video ${videoId} analyzed! Check console for instructions.`);
+        console.log("Instructions:", data.instructions);
+      } catch (err) {
+        console.error("Analyze error:", err);
+        alert("Failed to analyze video. Check console.");
+      }
+    }
+
+    async function editVideos() {
+      const prompt = document.getElementById("prompt").value || "Make it watchable";
+      const videoIds = Array.from(document.querySelectorAll(".video-item")).map(div => {
+        return div.querySelector("button").getAttribute("onclick").match(/'(.+?)'/)[1];
+      });
+
+      if (!videoIds.length) {
+        alert("No videos available to edit.");
+        return;
+      }
+
+      try {
+        const res = await fetch("http://localhost:8000/edit-video", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ video_ids: videoIds, prompt, add_captions: true })
+        });
+        const data = await res.json();
+        const videoUrl = `http://localhost:8000/${data.output_video}`;
+        outputVideo.src = videoUrl;
+        downloadLink.href = videoUrl;
+        downloadLink.download = "output.mp4";
+        alert("Videos edited and spliced successfully!");
+      } catch (err) {
+        console.error(err);
+        alert("Failed to edit videos.");
+      }
+    }
+
+    // Initial fetch
+    fetchVideos();
+  </script>
+</body>
+</html>

@@ -1,6 +1,9 @@
 from pydantic import BaseModel
 from typing import List
 
+class AnalyzeRequest(BaseModel):
+    prompt: str
+
 class UploadVideoResponse(BaseModel):
     video_id: str
     filename: str

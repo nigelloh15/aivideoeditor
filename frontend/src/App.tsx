@@ -125,7 +125,7 @@ function App() {
               )}
               <textarea
                 className="flex-1 min-w-0 rounded-xl bg-gray-800 text-white px-5 py-5 focus:outline-none resize-none mb-2 min-h-[120px] transition-shadow duration-300"
-                placeholder="Enter prompt..."
+                placeholder="What would you like to create?"
                 rows={4}
                 disabled={isLocked || isGenerating} // disable when generating OR after finished once
                 style={{

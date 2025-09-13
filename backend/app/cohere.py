@@ -1,36 +1,33 @@
 import cohere
 import json
 from .llminterface import LLMInterface
-
-COHERE_API_KEY = "YOUR_COHERE_API_KEY"
-
+import base64
+COHERE_API_KEY = "api key"  # <- replace this
+MODEL = "c4ai-aya-vision-8b"
+co = cohere.ClientV2(COHERE_API_KEY)
 class CohereLLM(LLMInterface):
     def __init__(self):
-        self.client = cohere.Client(COHERE_API_KEY)
-
-    def generate_video_instructions(self, video_path: str, user_prompt: str, max_clips: int = 10):
-        prompt = f"""
-        You are a video editing assistant.
-        The video is at {video_path}.
-        The user wants: {user_prompt}.
-        Identify up to {max_clips} key moments.
-        For each moment, output JSON with start, end, summary, caption.
-        """
-        response = self.client.generate(
-            model="xlarge",
-            prompt=prompt,
-            max_tokens=500,
-            temperature=0.5
-        )
-
-        if response.generations and len(response.generations) > 0:
-            text_output = response.generations[0].text.strip()
-        else:
-            text_output = ""
-
+        
+        self.client = cohere.ClientV2(COHERE_API_KEY)
+    def generate_video_instructions(frame_image_path, prompt="Describe this frame"):
         try:
-            instructions = json.loads(text_output)
-        except json.JSONDecodeError:
-            instructions = []
+            with open(frame_image_path, "rb") as img_file:
+                base64_image = f"data:image/jpeg;base64,{base64.b64encode(img_file.read()).decode('utf-8')}"
 
-        return instructions
+            response = co.chat(
+                model=MODEL,
+                messages=[{
+                    "role": "user",
+                    "content": [
+                        {"type": "text", "text": prompt},
+                        {"type": "image_url", "image_url": {"url": base64_image}}
+                    ]
+                }],
+                temperature=0.3,
+            )
+
+            text_output = response.message.content[0].text.strip()
+            return {"summary": text_output, "caption": text_output}
+        except Exception as e:
+            print(f"Error in CohereLLM.generate_video_instructions: {e}")
+            return [{"summary": "Error generating description"}]

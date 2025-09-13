@@ -1,159 +1,28 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <link href="/src/index.css" rel="stylesheet">
+    <title>Vite + React + TS</title>
+  </head>
+  <body>
+    <div id="root"></div>
+    <script type="module" src="/src/main.tsx"></script>
+  </body>
+</html>
+
+<!-- <!doctype html>
+<html>
 <head>
   <meta charset="UTF-8">
-  <title>AI Video Editor</title>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-  <style>
-    /* Reset & base */
-    * { box-sizing: border-box; margin: 0; padding: 0; }
-    body { font-family: 'Inter', sans-serif; background: #f2f2f7; color: #1c1c1e; }
-    main { max-width: 500px; margin: 30px auto; padding: 0 15px; }
-
-    h1 { text-align: center; font-weight: 600; margin-bottom: 30px; color: #0a84ff; }
-
-    section {
-      background: #ffffff;
-      padding: 20px;
-      margin-bottom: 20px;
-      border-radius: 20px;
-      box-shadow: 0 4px 20px rgba(0,0,0,0.05);
-    }
-
-    h2 {
-      font-weight: 600;
-      font-size: 1.2rem;
-      margin-bottom: 15px;
-      color: #0a84ff;
-    }
-
-    input[type="file"], input[type="text"] {
-      width: 100%;
-      padding: 12px 15px;
-      margin: 10px 0;
-      border-radius: 15px;
-      border: 1px solid #d1d1d6;
-      background: #f2f2f7;
-      font-size: 1rem;
-    }
-
-    button {
-      width: 100%;
-      padding: 12px 0;
-      margin-top: 10px;
-      border: none;
-      border-radius: 15px;
-      background: #0a84ff;
-      color: white;
-      font-weight: 600;
-      font-size: 1rem;
-      cursor: pointer;
-      transition: background 0.2s ease;
-    }
-
-    button:hover {
-      background: #0060df;
-    }
-
-    pre {
-      background: #f2f2f7;
-      padding: 15px;
-      border-radius: 15px;
-      margin-top: 10px;
-      font-size: 0.9rem;
-      overflow-x: auto;
-    }
-
-    video {
-      width: 100%;
-      border-radius: 20px;
-      margin-top: 15px;
-      box-shadow: 0 8px 30px rgba(0,0,0,0.1);
-    }
-
-    .flex-row {
-      display: flex;
-      gap: 10px;
-      flex-wrap: wrap;
-    }
-
-    .flex-row > * {
-      flex: 1;
-      min-width: 120px;
-    }
-
-  </style>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <link href="/src/style.css" rel="stylesheet">
 </head>
 <body>
-  <main>
-    <h1>AI Video Editor</h1>
-
-    <section>
-      <h2>Upload Video</h2>
-      <input type="file" id="uploadFile">
-      <button onclick="uploadVideo()">Upload</button>
-      <pre id="uploadResult"></pre>
-    </section>
-
-    <section>
-      <h2>Analyze Video</h2>
-      <div class="flex-row">
-        <input type="text" id="analyzeVideoId" placeholder="Video ID">
-        <button onclick="analyzeVideo()">Analyze</button>
-      </div>
-      <pre id="analyzeResult"></pre>
-    </section>
-
-    <section>
-      <h2>Edit Video</h2>
-      <div class="flex-row">
-        <input type="text" id="editVideoIds" placeholder="Video IDs (comma separated)">
-        <input type="text" id="editPrompt" placeholder="Prompt">
-        <button onclick="editVideo()">Edit</button>
-      </div>
-      <video id="outputVideo" controls></video>
-    </section>
-  </main>
-
-  <script>
-    async function uploadVideo() {
-      const file = document.getElementById('uploadFile').files[0];
-      if (!file) return alert('Select a file first');
-
-      const formData = new FormData();
-      formData.append('file', file);
-
-      const res = await fetch('http://127.0.0.1:8000/upload-video', {
-        method: 'POST',
-        body: formData
-      });
-      const data = await res.json();
-      document.getElementById('uploadResult').innerText = JSON.stringify(data, null, 2);
-    }
-
-    async function analyzeVideo() {
-      const videoId = document.getElementById('analyzeVideoId').value;
-      if (!videoId) return alert('Enter a video ID');
-
-      const res = await fetch(`http://127.0.0.1:8000/analyze-video/${videoId}`);
-      const data = await res.json();
-      document.getElementById('analyzeResult').innerText = JSON.stringify(data, null, 2);
-    }
-
-    async function editVideo() {
-      const videoIds = document.getElementById('editVideoIds').value.split(',').map(v => v.trim());
-      const prompt = document.getElementById('editPrompt').value;
-
-      const res = await fetch('http://127.0.0.1:8000/edit-video', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ video_ids: videoIds, prompt: prompt, add_captions: true })
-      });
-      const data = await res.json();
-      const videoEl = document.getElementById('outputVideo');
-      videoEl.src = data.output_video;
-      videoEl.load();
-    }
-  </script>
+  <h1 class="text-3xl font-bold underline">
+    Hello world!
+  </h1>
 </body>
-</html>
+</html> -->

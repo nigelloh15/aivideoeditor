@@ -1,34 +1,48 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { Upload, Scissors, Play, Download } from 'lucide-react'
 import './App.css'
 
 function App() {
   const [count, setCount] = useState(0)
 
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+    <div className="flex h-screen bg-gray-900 text-white">
+      {/* Sidebar */}
+      <aside className="w-20 bg-gray-800 flex flex-col justify-between p-4">
+        <div className="space-y-4">
+          <button className="flex flex-col items-center space-y-1 hover:text-blue-400">
+            <Upload className="h-6 w-6" />
+            <span className="text-xs">Import</span>
+          </button>
+          <button className="flex flex-col items-center space-y-1 hover:text-blue-400">
+            <Scissors className="h-6 w-6" />
+            <span className="text-xs">Cut</span>
+          </button>
+          <button className="flex flex-col items-center space-y-1 hover:text-blue-400">
+            <Play className="h-6 w-6" />
+            <span className="text-xs">Play</span>
+          </button>
+        </div>
+        <div>
+          <button className="flex flex-col items-center space-y-1 hover:text-blue-400">
+            <Download className="h-6 w-6" />
+            <span className="text-xs">Export</span>
+          </button>
+        </div>
+      </aside>
+
+      {/* Main Editor Area */}
+      <main className="flex-1 flex flex-col">
+        <div className="flex-1 bg-gray-700 flex items-center justify-center">
+          <p className="text-gray-300">Editor Canvas</p>
+        </div>
+
+        {/* Timeline */}
+        <div className="h-40 bg-gray-800 border-t border-gray-700 flex items-center justify-center">
+          <p className="text-gray-400">Timeline Area</p>
+        </div>
+      </main>
+    </div>
   )
 }
 

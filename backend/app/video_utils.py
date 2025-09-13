@@ -1,4 +1,6 @@
 import subprocess
+import os
+from pathlib import Path
 
 def cut_video(input_path: str, output_path: str, start: float, end: float):
     subprocess.run([
@@ -23,4 +25,3 @@ def add_text_overlay(input_path: str, output_path: str, text: str, start: float,
         "-vf", f"drawtext=text='{text}':x=10:y=H-th-10:enable='between(t,{start},{end})'",
         "-c:a", "copy", output_path
     ])
-

@@ -69,7 +69,6 @@ def analyze_video(video_id: str, request: AnalyzeRequest):
     save_instructions(video_id, instructions)
     return {"video_id": video_id, "instructions": instructions}
 
-
 @app.post("/edit-video")
 def edit_video(request: EditRequest):
     """

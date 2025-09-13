@@ -1,34 +1,55 @@
 import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
+import { Upload, Play, Download, ClosedCaption } from 'lucide-react'
 import './App.css'
 
 function App() {
   const [count, setCount] = useState(0)
-
   return (
-    <>
-      <div>
-        <a href="https://vite.dev" target="_blank">
-          <img src={viteLogo} className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://react.dev" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
+    <div className="flex flex-col h-screen bg-gray-900 text-white">
+      <header className="h-20 bg-gray-800 flex items-center justify-between px-6">
+      {/* Upload button and caption button*/}
+      <div className="flex space-x-20">
+        <button className="flex flex-col items-center hover:text-blue-400">
+          <Upload className="h-7 w-7" />
+          <span className="text-xs">Import</span>
         </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
+        <button className="flex flex-col items-center hover:text-blue-400">
+          <ClosedCaption className="h-7 w-7" />
+          <span className="text-xs">Captions</span>
+        </button>
       </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </>
+
+      {/* Editable title in center */}
+      <div
+        contentEditable
+        suppressContentEditableWarning={true}
+        className="text-white text-lg font-semibold text-center outline-none bg-gray-700 px-3 py-1 rounded inline-block"
+      >
+        Project Title
+      </div>
+
+      {/* Preview and export button */}
+      <div className="flex space-x-20">
+        <button className="flex flex-col items-center hover:text-blue-400">
+          <Play className="h-7 w-7" />
+          <span className="text-xs">Preview</span>
+        </button>
+        <button className="flex flex-col items-center hover:text-blue-400">
+          <Download className="h-7 w-7" />
+          <span className="text-xs">Export</span>
+        </button>
+      </div>
+    </header>
+
+
+      {/* Main Editor Area */}
+      <main className="flex-1 flex flex-col">
+        <div className="flex-1 bg-gray-700 flex items-center justify-center">
+          <p className="text-gray-300">Editor Canvas</p>
+        </div>
+
+      </main>
+    </div>
   )
 }
 

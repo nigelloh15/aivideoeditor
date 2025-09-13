@@ -1,10 +1,9 @@
 import { useState } from 'react'
-import { Upload, Scissors, Play, Download } from 'lucide-react'
+import { Upload, Play, Download, ClosedCaption} from 'lucide-react'
 import './App.css'
 
 function App() {
   const [count, setCount] = useState(0)
-
   return (
     <div className="flex flex-col h-screen bg-gray-900 text-white">
       <header className="h-20 bg-gray-800 flex items-center justify-between px-6">
@@ -31,8 +30,7 @@ function App() {
           <span className="text-xs">Export</span>
         </button>
       </div>
-    </header>
-
+      </header>
 
       {/* Main Editor Area */}
       <main className="flex-1 flex flex-row bg-red-900">

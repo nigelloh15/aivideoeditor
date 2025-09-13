@@ -2,9 +2,9 @@ from fastapi import FastAPI, UploadFile, File
 from pathlib import Path
 import uuid
 from typing import List
-from .models import UploadVideoResponse, VideoMarker, VideoSummaryResponse, EditRequest
-from .video_utils import cut_video, splice_videos, add_text_overlay
-from .ai_utils import analyze_video, select_clips_based_on_prompt
+from models import UploadVideoResponse, VideoMarker, VideoSummaryResponse, EditRequest
+from video_utils import cut_video, splice_videos, add_text_overlay
+from ai_utils import analyze_video, select_clips_based_on_prompt
 
 app = FastAPI()
 
@@ -23,6 +23,9 @@ async def upload_video(file: UploadFile = File(...)):
     file_path = VIDEO_DIR / f"{video_id}_{filename}"
     with open(file_path, "wb") as f:
         f.write(await file.read())
+
+
+    print("clip uploaded")
     return UploadVideoResponse(video_id=video_id, filename=filename)
 
 @app.get("/analyze-video/{video_id}", response_model=VideoSummaryResponse)
@@ -40,7 +43,10 @@ def analyze(video_id: str):
     with open(METADATA_DIR / f"{video_id}.json", "w") as f:
         json.dump([marker.dict() for marker in markers], f)
     
+    print("clip analyzed")
     return VideoSummaryResponse(video_id=video_id, markers=markers)
+
+
 
 @app.post("/edit-video")
 def edit_video(request: EditRequest):
@@ -61,17 +67,33 @@ def edit_video(request: EditRequest):
     
     # Cut selected clips into separate files
     cut_clip_paths = []
-    for idx, clip_path in enumerate(selected_clips):
+
+    for idx, clip in enumerate(selected_clips):
+
+        vid = clip["video_id"]
+        startpoint = clip["start"]
+        endpoint = clip["end"]
+        
+        video_files = list(VIDEO_DIR.glob(f"{vid}_*"))
+        if not video_files:
+            continue  # skip if missing
+        video_path = video_files[0]
+
         cut_path = PROCESSED_DIR / f"clip_{idx}.mp4"
-        cut_video(clip_path, str(cut_path), start=0, end=5)  # Placeholder 5-second cuts
+        cut_video(str(video_path), str(cut_path), start=startpoint, end=endpoint)  # Placeholder 5-second cuts
         cut_clip_paths.append(str(cut_path))
     
     # Splice clips together
     output_video_path = PROCESSED_DIR / f"{uuid.uuid4()}.mp4"
     splice_videos(cut_clip_paths, str(output_video_path))
+
+
+
+    print("clip edit")
     
     # Add captions if requested
     if request.add_captions:
-        add_text_overlay(str(output_video_path), str(output_video_path), "Sample Caption", 0, 5)
-    
+        caption_path = PROCESSED_DIR / f"{uuid.uuid4()}_captioned.mp4"
+        add_text_overlay(str(output_video_path), str(caption_path), "Sample Caption", 0, 5)
+        output_video_path = caption_path
     return {"output_video": str(output_video_path)}

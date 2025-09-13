@@ -117,7 +117,7 @@ function App() {
               </button>
             </div>
             {/* Video Player */}
-            <div className="aspect-video bg-black rounded-r-lg shadow-lg flex-1 flex items-center justify-center min-w-[320px] max-w-[1920px]">
+            <div className="aspect-video bg-black rounded-xl shadow-lg flex-1 flex items-center justify-center min-w-[320px] max-w-[1920px]">
               <span className="text-gray-500">[Video Player Here]</span>
             </div>
           </div>

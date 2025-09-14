@@ -27,22 +27,41 @@ def add_text_overlay(input_path: str, output_path: str, text: str, start: float,
     ])
 
 
-
-def extract_frames(input_path: str, output_dir: str, frame_interval: int = 60):
+def extract_frames(input_path: str, output_dir: str, frame_interval: int = 240):
     """
-    Extract one frame every `frame_interval` frames.
-    Example: frame_interval=60 → 1 frame per 60 frames.
+    Extract one frame every `frame_interval` frames and return timestamps.
+    Returns a list of (frame_path, timestamp_in_seconds).
     """
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     output_pattern = os.path.join(output_dir, "frame_%06d.jpg")
 
-    subprocess.run([
+    # Run FFmpeg with select and showinfo to get timestamps
+    process = subprocess.Popen([
         "ffmpeg", "-y", "-i", input_path,
-        "-vf", f"select='not(mod(n\\,{frame_interval}))'",
+        "-vf", f"select='not(mod(n\\,{frame_interval}))',showinfo",
         "-vsync", "vfr", output_pattern
-    ], check=True)
+    ], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
 
-    return sorted(Path(output_dir).glob("frame_*.jpg"))
+    _, stderr = process.communicate()
+
+    if process.returncode != 0:
+        raise RuntimeError(f"Frame extraction failed:\n{stderr}")
+
+    # Parse timestamps from FFmpeg logs
+    timestamps = []
+    for line in stderr.splitlines():
+        if "pts_time:" in line:
+            try:
+                ts = float(line.split("pts_time:")[-1].split()[0])
+                timestamps.append(ts)
+            except Exception:
+                continue
+
+    images = sorted(Path(output_dir).glob("frame_*.jpg"))
+    
+    # Return list of tuples: (frame_path, timestamp)
+    return list(zip(images, timestamps))
+
 
 
 def detect_scenes(input_path: str, output_dir: str, threshold: float = 0.4):

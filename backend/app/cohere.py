@@ -2,14 +2,14 @@ import cohere
 import json
 from .llminterface import LLMInterface
 import base64
-COHERE_API_KEY = "o40qJtfhg9POx0jOk7FKqbscUyBdJwrYxqzSh1NW"  # <- replace this
+COHERE_API_KEY = "apikey"  # <- replace this
 MODEL = "c4ai-aya-vision-8b"
 co = cohere.ClientV2(COHERE_API_KEY)
 class CohereLLM(LLMInterface):
     def __init__(self):
         
         self.client = cohere.ClientV2(COHERE_API_KEY)
-    def generate_video_instructions(self, frame_image_path, prompt="Describe this frame"):
+    def generate_video_instructions(self, frame_image_path, prompt="Describe this frame in exactly one concise sentence. Could be a lengthy sentence depending on how detailed the image is."):
         try:
             # Encode frame as base64
             with open(frame_image_path, "rb") as img_file:

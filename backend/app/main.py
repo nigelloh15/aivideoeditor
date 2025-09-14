@@ -7,7 +7,7 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
 from .models import UploadVideoResponse, EditRequest, AnalyzeRequest
-from .video_utils import cut_video, splice_videos, add_text_overlay, detect_scenes
+from .video_utils import cut_video, splice_videos, add_text_overlay, detect_scenes, extract_frames
 from .ai_utils import save_instructions, load_instructions
 from .cohere import CohereLLM
 from .gemini import GeminiLLM
@@ -77,7 +77,7 @@ async def upload_video(file: UploadFile = File(...)):
 def analyze_video(video_id: str, request: AnalyzeRequest):
     """
     Analyze a video using Cohere AI.
-    Detect key frames and generate editing instructions for every 60th frame.
+    Extract 1 frame every 60 frames and generate editing instructions.
     Returns the instructions as JSON.
     """
     video_files = list(VIDEO_DIR.glob(f"{video_id}_*"))
@@ -88,43 +88,41 @@ def analyze_video(video_id: str, request: AnalyzeRequest):
     video_path = str(video_files[0])
     print(f"Analyzing video: {video_path} with prompt: {request.prompt}")
 
-    # 1. Detect key frames / scenes
-    from .video_utils import detect_scenes
+    # 1. Extract frames every 60 frames (instead of scene detection)
+    
     frames_dir = Path(f"./videos/temp_frames/{video_id}")
     frames_dir.mkdir(parents=True, exist_ok=True)
 
-    frames = detect_scenes(video_path, str(frames_dir), threshold=0.3)
-    print(f"Detected {len(frames)} key frames for video {video_id}")
+    # Extract frames every 60 frames
+    frame_files = extract_frames(video_path, str(frames_dir), frame_interval=240)
+    print(f"Extracted {len(frame_files)} frames for video {video_id}")
 
     instructions = []
 
-    # 2. Generate AI instructions for every 60th frame
-    for i, (frame_path, timestamp) in enumerate(frames):
-        if i % 60 != 0:
-            continue  # skip frames that are not every 60th
-
+    for i, (frame_path, timestamp) in enumerate(frame_files):
         try:
-            # Call CohereLLM correctly
+            # Convert Path to string
             desc_list = llm.generate_video_instructions(str(frame_path))
             summary = desc_list[0]["summary"] if desc_list else "No description"
         except Exception as e:
-            print(f"Error generating description for frame {i}: {e}")
+            print(f"Error in CohereLLM.generate_video_instructions: {e}")
             summary = "Error generating description"
 
         print(f"[Frame {i}] Timestamp: {timestamp:.2f}s -> AI sees: {summary}")
 
         instructions.append({
             "start": timestamp,
-            "end": min(timestamp + 5, 9999),  # default 5s clip
+            "end": timestamp + 5,  # or any desired duration
             "summary": summary,
             "caption": summary
         })
 
-    # 3. Save instructions for later editing
+    # 3. Save instructions
     save_instructions(video_id, instructions)
     print(f"Saved {len(instructions)} instructions for video {video_id}")
 
     return {"video_id": video_id, "instructions": instructions}
+
 
 
 

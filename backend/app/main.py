@@ -124,8 +124,6 @@ def analyze_video(video_id: str, request: AnalyzeRequest):
 
 
 
-
-
 @app.post("/edit-video")
 def edit_video(request: EditRequest):
     """
@@ -134,18 +132,31 @@ def edit_video(request: EditRequest):
     """
     all_clips = []
 
+    # Instantiate your Cohere LLM
+    llm = CohereLLM()
+
     for vid in request.video_ids:
         video_files = list(VIDEO_DIR.glob(f"{vid}_*"))
         if not video_files:
             continue
         video_path = str(video_files[0])
         instructions = load_instructions(vid)
-        print(instructions)
 
-        for idx, instr in enumerate(instructions):
+        if not instructions:
+            continue
+
+        # Use Cohere to select and order relevant clips
+        chosen_indices = llm.select_and_order_clips(instructions, request.prompt)
+        print(f"Chosen clip indices for {vid}: {chosen_indices}")
+
+        for idx in chosen_indices:
+            instr = instructions[idx]
             clip_path = PROCESSED_DIR / f"{vid}_clip_{idx}.mp4"
+
+            # Cut the clip
             cut_video(video_path, str(clip_path), start=instr["start"], end=instr["end"])
 
+            # Add captions if requested
             if request.add_captions and instr.get("caption"):
                 add_text_overlay(
                     str(clip_path),

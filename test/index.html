@@ -47,7 +47,7 @@
       formData.append("file", fileInput.files[0]);
 
       try {
-        const res = await fetch("http://localhost:8000/upload-video", {
+        const res = await fetch("http://localhost:8001/upload-video", {
           method: "POST",
           body: formData
         });
@@ -64,7 +64,7 @@
     // Fetch all videos in raw folder from backend
     async function fetchVideos() {
       try {
-        const res = await fetch("http://localhost:8000/list-videos");
+        const res = await fetch("http://localhost:8001/list-videos");
         const videos = await res.json();
         videoListDiv.innerHTML = "";
 
@@ -91,7 +91,7 @@
     async function analyzeVideo(videoId) {
       const prompt = document.getElementById("prompt").value || "Make it watchable";
       try {
-        const res = await fetch(`http://localhost:8000/analyze-video/${videoId}`, {
+        const res = await fetch(`http://localhost:8001/analyze-video/${videoId}`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ prompt })
@@ -117,13 +117,13 @@
       }
 
       try {
-        const res = await fetch("http://localhost:8000/edit-video", {
+        const res = await fetch("http://localhost:8001/edit-video", {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({ video_ids: videoIds, prompt, add_captions: true })
         });
         const data = await res.json();
-        const videoUrl = `http://localhost:8000/${data.output_video}`;
+        const videoUrl = `http://localhost:8001/${data.output_video}`;
         outputVideo.src = videoUrl;
         downloadLink.href = videoUrl;
         downloadLink.download = "output.mp4";

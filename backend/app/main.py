@@ -7,10 +7,9 @@ from fastapi import APIRouter
 from fastapi.responses import JSONResponse
 
 from .models import UploadVideoResponse, EditRequest, AnalyzeRequest
-from .video_utils import cut_video, splice_videos, add_text_overlay, detect_scenes, extract_frames
+from .video_utils import cut_video, splice_videos, extract_frames
 from .ai_utils import save_instructions, load_instructions
 from .cohere import CohereLLM
-from .gemini import GeminiLLM
 
 # Initialize FastAPI
 app = FastAPI()
@@ -94,7 +93,7 @@ def analyze_video(video_id: str, request: AnalyzeRequest):
     frames_dir.mkdir(parents=True, exist_ok=True)
 
     # Extract frames every 60 frames
-    frame_files = extract_frames(video_path, str(frames_dir), frame_interval=240)
+    frame_files = extract_frames(video_path, str(frames_dir), frame_interval=300)
     print(f"Extracted {len(frame_files)} frames for video {video_id}")
 
     instructions = []
@@ -123,45 +122,80 @@ def analyze_video(video_id: str, request: AnalyzeRequest):
 
     return {"video_id": video_id, "instructions": instructions}
 
-
-
-
-
 @app.post("/edit-video")
 def edit_video(request: EditRequest):
     """
-    Cut, splice, and optionally add captions to the videos based on LLM instructions.
-    Returns the path to the final processed video.
+    Analyze videos with Cohere AI, select only the clips that match the story,
+    and splice ONLY those chosen clips into the final processed video.
     """
     all_clips = []
+
+    llm = CohereLLM()
 
     for vid in request.video_ids:
         video_files = list(VIDEO_DIR.glob(f"{vid}_*"))
         if not video_files:
+            print(f"⚠️ No video found for video_id={vid}")
             continue
-        video_path = str(video_files[0])
-        instructions = load_instructions(vid)
 
-        for idx, instr in enumerate(instructions):
+        video_path = str(video_files[0])
+        print(f"Analyzing + Editing video: {video_path} with prompt: {request.prompt}")
+
+        # --- Step 1: Extract frames ---
+        frames_dir = Path(f"./videos/temp_frames/{vid}")
+        frames_dir.mkdir(parents=True, exist_ok=True)
+
+        frame_files = extract_frames(video_path, str(frames_dir), frame_interval=300)
+        print(f"✅ Extracted {len(frame_files)} frames for video {vid}")
+
+        # --- Step 2: Generate AI instructions for each frame ---
+        instructions = []
+        for i, (frame_path, timestamp) in enumerate(frame_files):
+            try:
+                desc_list = llm.generate_video_instructions(str(frame_path))
+                summary = desc_list[0]["summary"] if desc_list else "No description"
+            except Exception as e:
+                print(f"❌ Error in CohereLLM.generate_video_instructions: {e}")
+                summary = "Error generating description"
+
+            print(f"[Frame {i}] Timestamp: {timestamp:.2f}s -> AI sees: {summary}")
+
+            instructions.append({
+                "start": timestamp,
+                "end": timestamp + 5,  # configurable duration
+                "summary": summary,
+                "caption": summary
+            })
+
+        # Save instructions (debugging / auditing)
+        save_instructions(vid, instructions)
+
+        # --- Step 3: Use LLM to EXPLICITLY choose clips ---
+        chosen_indices = llm.select_and_order_clips(instructions, request.prompt)
+        print(f"🎯 LLM explicitly chose clip indices for {vid}: {chosen_indices}")
+
+        # --- Step 4: ONLY cut the explicitly chosen clips ---
+        for idx in chosen_indices:
+            if idx < 0 or idx >= len(instructions):
+                print(f"⚠️ Skipping invalid index {idx} (out of bounds for {vid})")
+                continue
+
+            instr = instructions[idx]
             clip_path = PROCESSED_DIR / f"{vid}_clip_{idx}.mp4"
+
+            print(f"✂️ Cutting clip {idx} from {instr['start']}s to {instr['end']}s for {vid}")
             cut_video(video_path, str(clip_path), start=instr["start"], end=instr["end"])
 
-            if request.add_captions and instr.get("caption"):
-                add_text_overlay(
-                    str(clip_path),
-                    str(clip_path),
-                    instr["caption"],
-                    start=0,
-                    end=instr["end"] - instr["start"]
-                )
-
+            # ✅ ONLY append clips that were chosen
             all_clips.append(str(clip_path))
 
     if not all_clips:
-        return {"error": "No clips found to splice."}
+        print("❌ No clips chosen by the LLM, nothing to splice.")
+        return {"error": "No clips matched the story."}
 
-    # Splice all clips together
+    # --- Step 5: Splice ONLY the chosen clips ---
     output_path = PROCESSED_DIR / f"{uuid.uuid4()}.mp4"
+    print(f"📀 Splicing {len(all_clips)} explicitly chosen clips into final video...")
     splice_videos(all_clips, str(output_path))
 
     return {"output_video": f"videos/processed/{output_path.name}"}

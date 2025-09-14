@@ -56,6 +56,15 @@ def splice_videos(input_paths: list, output_path: str):
         os.remove(f)
 
 def extract_frames(input_path: str, output_dir: str, frame_interval: int = 240):
+    temp_path = safe_output_path(output_path)
+    subprocess.run([
+        "ffmpeg", "-y", "-i", input_path,
+        "-ss", str(start), "-to", str(end),
+        "-c", "copy", temp_path
+    ], check=True)
+    replace_with_temp(temp_path, output_path)
+
+def splice_videos(input_paths: list, output_path: str):
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     output_pattern = os.path.join(output_dir, "frame_%06d.jpg")
 
@@ -79,4 +88,3 @@ def extract_frames(input_path: str, output_dir: str, frame_interval: int = 240):
 
     images = sorted(Path(output_dir).glob("frame_*.jpg"))
     return list(zip(images, timestamps))
-

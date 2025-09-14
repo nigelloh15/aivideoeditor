@@ -31,25 +31,49 @@ const VideoUploader = forwardRef<VideoUploaderHandle>((_, ref) => {
     setUploading(true);
 
     try {
+      if (files.length === 0) return; // no file selected
       const formData = new FormData();
-      files.forEach((f) => formData.append("files", f));
+      formData.append("file", files[0]); // only first file, field name matches backend
 
-      const res = await fetch("http://localhost:8000/upload/", {
+      const res = await fetch("http://localhost:8000/upload-video", {
         method: "POST",
-        body: formData,
+        body: formData, // browser sets Content-Type automatically
       });
 
       if (!res.ok) throw new Error(`Upload failed: ${res.status} ${res.statusText}`);
       const data = await res.json();
-      setUploaded(data.saved || []);
-      console.log("Uploaded files:", data.saved);
+      console.log("Uploaded file:", data);
     } catch (err: any) {
-      setError(err.message || String(err));
+      console.error(err);
     } finally {
       setUploading(false);
       if (fileInputRef.current) fileInputRef.current.value = ""; // reset input
     }
   };
+
+  //FOR MULTIPLE FILE UPLOAD:
+
+  //   try {
+  //     const formData = new FormData();
+  //     files.forEach((file) => formData.append("files", file)); // must match backend
+
+  //     const res = await fetch("http://localhost:8000/upload-video", {
+  //       method: "POST",
+  //       body: formData,
+  //     });
+
+  //     if (!res.ok) throw new Error(`Upload failed: ${res.status} ${res.statusText}`);
+
+  //     const data = await res.json();
+  //     setUploaded(data || []);
+  //     console.log("Uploaded files:", data);
+  //   } catch (err: any) {
+  //     setError(err.message || String(err));
+  //   } finally {
+  //     setUploading(false);
+  //     if (fileInputRef.current) fileInputRef.current.value = ""; // reset input
+  //   }
+  // };
 
   return (
     <div>

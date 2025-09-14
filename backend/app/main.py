@@ -10,7 +10,6 @@ from .models import UploadVideoResponse, EditRequest, AnalyzeRequest
 from .video_utils import cut_video, splice_videos, add_text_overlay, detect_scenes, extract_frames
 from .ai_utils import save_instructions, load_instructions
 from .cohere import CohereLLM
-from .gemini import GeminiLLM
 
 # Initialize FastAPI
 app = FastAPI()
@@ -141,6 +140,7 @@ def edit_video(request: EditRequest):
             continue
         video_path = str(video_files[0])
         instructions = load_instructions(vid)
+        print(instructions)
 
         for idx, instr in enumerate(instructions):
             clip_path = PROCESSED_DIR / f"{vid}_clip_{idx}.mp4"

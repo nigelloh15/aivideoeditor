@@ -46,7 +46,7 @@ def add_text_overlay(input_path: str, output_path: str, text: str, start: float,
     ], check=True)
     replace_with_temp(temp_path, output_path)
 
-def extract_frames(input_path: str, output_dir: str, frame_interval: int = 240):
+def extract_frames(input_path: str, output_dir: str, frame_interval: int =30):
     Path(output_dir).mkdir(parents=True, exist_ok=True)
     output_pattern = os.path.join(output_dir, "frame_%06d.jpg")
 

@@ -32,6 +32,37 @@
     animation: logo-spin infinite 20s linear;
   }
 }
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+.animate-fadeIn {
+  animation: fadeIn 0.5s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+@keyframes fadeIn1 {
+  from { opacity: 0; transform: translateY(20px);}
+  to { opacity: 1; transform: translateY(0);}
+}
+.animate-fadeIn-1 {
+  animation: fadeIn1 1.0s cubic-bezier(0.4,0,0.2,1) both;
+}
+
+@keyframes pulseShadow {
+  0%, 100% { box-shadow: 0 4px 24px 0 rgba(59,130,246,0.15);}
+  50% { box-shadow: 0 8px 32px 0 rgba(59,130,246,0.25);}
+}
+.pulse-shadow:hover {
+  animation: pulseShadow 1s infinite;
+}
+
+@keyframes button-pulse {
+  0%, 100% { transform: scale(1);}
+  50% { transform: scale(1.07);}
+}
+.button-pulse:active {
+  animation: button-pulse 0.3s;
+}
 
 .card {
   padding: 2em;

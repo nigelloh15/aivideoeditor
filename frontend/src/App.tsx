@@ -4,12 +4,13 @@ import './App.css';
 
 function App() {
   const [files, setFiles] = useState<File[]>([]);
-  const [isPlaying, setIsPlaying] = useState(false); // Add this line
+  const [isPlaying, setIsPlaying] = useState(false);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const videoContainerRef = useRef<HTMLDivElement | null>(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
+  const [isLocked, setIsLocked] = useState(false); // NEW: lock after first generate
 
   const handleUploadClick = () => {
     fileInputRef.current?.click();
@@ -105,26 +106,33 @@ function App() {
 
                 // Simulate progress
                 for (let i = 1; i <= 100; i++) {
-                  await new Promise((res) => setTimeout(res, 20)); // Simulate work
+                  await new Promise((res) => setTimeout(res, 20));
                   setProgress(i);
                 }
-                
+
                 await new Promise((res) => setTimeout(res, 300));
                 setIsGenerating(false);
+                setIsLocked(true); // lock permanently after first generate
               }}
             >
-            {isGenerating && (
-              <div className="w-full h-3 bg-gray-600 rounded mb-3 overflow-hidden">
-                <div
-                  className="h-full bg-blue-500 transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
-              </div>
-            )}
+              {isGenerating && (
+                <div className="w-full h-3 bg-gray-600 rounded mb-3 overflow-hidden">
+                  <div
+                    className="h-full bg-blue-500 transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
+              )}
               <textarea
-                className="flex-1 min-w-0 rounded-xl bg-gray-800 text-white px-5 py-5 focus:outline-none resize-none mb-2 min-h-[120px] transition-shadow duration-300 focus:shadow-[0_0_0_2px_rgba(59,130,246,0.4)]"
-                placeholder="Enter prompt..."
+                className="flex-1 min-w-0 rounded-xl bg-gray-800 text-white px-5 py-5 focus:outline-none resize-none mb-2 min-h-[120px] transition-shadow duration-300"
+                placeholder="What would you like to create?"
                 rows={4}
+                disabled={isLocked || isGenerating} // disable when generating OR after finished once
+                style={{
+                  backgroundColor: (isLocked || isGenerating) ? "#4B5563" : undefined,
+                  cursor: (isLocked || isGenerating) ? "not-allowed" : undefined,
+                  opacity: (isLocked || isGenerating) ? 0.7 : 1,
+                }}
               />
               <button
                 type="submit"
@@ -142,7 +150,6 @@ function App() {
           <div className="flex flex-row w-5/6 items-center justify-center animate-fadeIn-1">
             {/* Vertical Control Bar */}
             <div className="flex flex-col items-center justify-center bg-gray-800 rounded-lg py-6 px-3 mr-2 space-y-4 shadow">
-
               <button className="hover:text-blue-400 transition-transform duration-200 hover:scale-110">
                 <Rewind className="h-8 w-8" strokeWidth={2} />
               </button>
@@ -161,7 +168,10 @@ function App() {
               </button>
             </div>
             {/* Video Player */}
-            <div className="aspect-video bg-black rounded-xl shadow-lg flex-1 flex items-center justify-center min-w-[320px] max-w-[1920px] pulse-shadow transition-shadow" ref={videoContainerRef}>
+            <div
+              className="aspect-video bg-black rounded-xl shadow-lg flex-1 flex items-center justify-center min-w-[320px] max-w-[1920px] pulse-shadow transition-shadow"
+              ref={videoContainerRef}
+            >
               <span className="text-gray-500">[Video Player Here]</span>
             </div>
           </div>

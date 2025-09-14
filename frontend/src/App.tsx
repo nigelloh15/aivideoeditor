@@ -1,12 +1,15 @@
 import { useRef, useState } from 'react';
 import { Upload, Play, Download, ClosedCaption, Pause, Rewind, FastForward } from 'lucide-react';
 import './App.css';
+import VideoUploader from "./VideoUpload";
+import type { VideoUploaderHandle } from "./VideoUpload";
 
 function App() {
   const [files, setFiles] = useState<File[]>([]);
   const [isPlaying, setIsPlaying] = useState(false); // Add this line
   const fileInputRef = useRef<HTMLInputElement | null>(null);
   const videoContainerRef = useRef<HTMLDivElement | null>(null);
+  const uploaderRef = useRef<VideoUploaderHandle>(null);
 
   const [isGenerating, setIsGenerating] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -41,11 +44,13 @@ function App() {
         <div className="flex space-x-5">
           <button
             className="flex flex-col items-center hover:text-blue-400 transition-transform duration-200 hover:scale-102"
-            onClick={handleUploadClick}
+            onClick={() => uploaderRef.current?.importVideos()}
           >
             <Upload className="h-7 w-7" />
             <span className="text-xs">Import</span>
+            <VideoUploader ref={uploaderRef} />
           </button>
+          
           <button className="flex flex-col items-center hover:text-blue-400 transition-transform duration-200 hover:scale-102">
             <ClosedCaption className="h-7 w-7" />
             <span className="text-xs">Captions</span>

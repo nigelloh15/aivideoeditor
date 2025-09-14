@@ -122,16 +122,23 @@ def analyze_video(video_id: str, request: AnalyzeRequest):
 
     return {"video_id": video_id, "instructions": instructions}
 
+
 @app.post("/edit-video")
 def edit_video(request: EditRequest):
     """
-    Analyze videos with Cohere AI, select only the clips that match the story,
-    and splice ONLY those chosen clips into the final processed video.
+    Step 1: Analyze ALL input videos and generate clip summaries.
+    Step 2: Feed ALL summaries to the LLM with the user story prompt.
+    Step 3: Cut ONLY the chosen clips, move them into a 'chosen' folder,
+            and splice ONLY those clips into the final processed video.
     """
-    all_clips = []
-
+    all_instructions = {}  # {video_id: [instructions]}
     llm = CohereLLM()
 
+    # --- Cleanup chosen clips folder ---
+    CHOSEN_DIR = Path("./videos/chosen")
+    CHOSEN_DIR.mkdir(parents=True, exist_ok=True)
+
+    # --- Phase 1: Analyze all videos ---
     for vid in request.video_ids:
         video_files = list(VIDEO_DIR.glob(f"{vid}_*"))
         if not video_files:
@@ -139,63 +146,79 @@ def edit_video(request: EditRequest):
             continue
 
         video_path = str(video_files[0])
-        print(f"Analyzing + Editing video: {video_path} with prompt: {request.prompt}")
+        print(f"📹 Analyzing video: {video_path}")
 
-        # --- Step 1: Extract frames ---
         frames_dir = Path(f"./videos/temp_frames/{vid}")
         frames_dir.mkdir(parents=True, exist_ok=True)
 
+        # Extract frames (every 300 frames ~ every 10s for 30fps)
         frame_files = extract_frames(video_path, str(frames_dir), frame_interval=300)
-        print(f"✅ Extracted {len(frame_files)} frames for video {vid}")
+        print(f"✅ Extracted {len(frame_files)} frames for {vid}")
 
-        # --- Step 2: Generate AI instructions for each frame ---
         instructions = []
         for i, (frame_path, timestamp) in enumerate(frame_files):
             try:
                 desc_list = llm.generate_video_instructions(str(frame_path))
                 summary = desc_list[0]["summary"] if desc_list else "No description"
             except Exception as e:
-                print(f"❌ Error in CohereLLM.generate_video_instructions: {e}")
+                print(f"❌ Error generating description for {vid}, frame {i}: {e}")
                 summary = "Error generating description"
 
-            print(f"[Frame {i}] Timestamp: {timestamp:.2f}s -> AI sees: {summary}")
-
             instructions.append({
+                "video_id": vid,
+                "frame_index": i,
                 "start": timestamp,
-                "end": timestamp + 5,  # configurable duration
+                "end": timestamp + 5,  # configurable
                 "summary": summary,
                 "caption": summary
             })
 
-        # Save instructions (debugging / auditing)
         save_instructions(vid, instructions)
+        all_instructions[vid] = instructions
 
-        # --- Step 3: Use LLM to EXPLICITLY choose clips ---
-        chosen_indices = llm.select_and_order_clips(instructions, request.prompt)
-        print(f"🎯 LLM explicitly chose clip indices for {vid}: {chosen_indices}")
+    if not all_instructions:
+        return {"error": "No videos analyzed."}
 
-        # --- Step 4: ONLY cut the explicitly chosen clips ---
-        for idx in chosen_indices:
-            if idx < 0 or idx >= len(instructions):
-                print(f"⚠️ Skipping invalid index {idx} (out of bounds for {vid})")
-                continue
+    # --- Phase 2: LLM selects across ALL videos ---
+    all_clips_info = []
+    for vid, instrs in all_instructions.items():
+        all_clips_info.extend(instrs)
 
-            instr = instructions[idx]
-            clip_path = PROCESSED_DIR / f"{vid}_clip_{idx}.mp4"
+    print(f"📝 Sending {len(all_clips_info)} summaries to LLM for story matching...")
+    print(all_clips_info)
+    chosen_indices = llm.select_and_order_clips(all_clips_info, request.prompt)
 
-            print(f"✂️ Cutting clip {idx} from {instr['start']}s to {instr['end']}s for {vid}")
-            cut_video(video_path, str(clip_path), start=instr["start"], end=instr["end"])
+    print(f"🎯 LLM chose {len(chosen_indices)} clips (global indices).")
 
-            # ✅ ONLY append clips that were chosen
-            all_clips.append(str(clip_path))
+    # --- Phase 3: Cut + move chosen clips ---
+    chosen_clip_paths = []
+    for idx in chosen_indices:
+        if idx < 0 or idx >= len(all_clips_info):
+            print(f"⚠️ Skipping invalid global index {idx}")
+            continue
 
-    if not all_clips:
-        print("❌ No clips chosen by the LLM, nothing to splice.")
-        return {"error": "No clips matched the story."}
+        instr = all_clips_info[idx]
+        vid = instr["video_id"]
 
-    # --- Step 5: Splice ONLY the chosen clips ---
+        video_files = list(VIDEO_DIR.glob(f"{vid}_*"))
+        if not video_files:
+            continue
+        video_path = str(video_files[0])
+
+        clip_path = CHOSEN_DIR / f"{vid}_clip_{instr['frame_index']}.mp4"
+
+        print(f"✂️ Cutting chosen clip {instr['frame_index']} from {vid} "
+              f"({instr['start']}s → {instr['end']}s)")
+        cut_video(video_path, str(clip_path), start=instr["start"], end=instr["end"])
+
+        chosen_clip_paths.append(str(clip_path))
+
+    if not chosen_clip_paths:
+        return {"error": "No clips chosen for final edit."}
+
+    # --- Splice ONLY chosen clips ---
     output_path = PROCESSED_DIR / f"{uuid.uuid4()}.mp4"
-    print(f"📀 Splicing {len(all_clips)} explicitly chosen clips into final video...")
-    splice_videos(all_clips, str(output_path))
+    print(f"📀 Splicing {len(chosen_clip_paths)} chosen clips into final video...")
+    splice_videos(chosen_clip_paths, str(output_path))
 
     return {"output_video": f"videos/processed/{output_path.name}"}

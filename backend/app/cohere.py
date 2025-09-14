@@ -2,7 +2,7 @@ import cohere
 import json
 from .llminterface import LLMInterface
 import base64
-COHERE_API_KEY = "apikey"  # <- replace this
+COHERE_API_KEY = ""
 MODEL = "c4ai-aya-vision-8b"
 co = cohere.ClientV2(COHERE_API_KEY)
 class CohereLLM(LLMInterface):
